@@ -93,8 +93,24 @@ class Trainer(abc.ABC):
             #  - Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            
-            raise NotImplementedError()
+            train_result = self.train_epoch(dl_train, verbose= verbose, **kw)
+            train_loss.extend(train_result.losses)
+            train_acc.append(train_result.accuracy)
+
+            test_result = self.test_epoch(dl_test, verbose= verbose, **kw)
+            test_loss.extend(test_result.losses)
+            test_acc.append(test_result.accuracy)
+
+            actual_num_epochs += 1
+
+            #early stopping
+            if best_acc is None or test_result.accuracy > best_acc:
+                best_acc = test_result.accuracy
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
+                if early_stopping is not None and epochs_without_improvement >= early_stopping:
+                    break
 
             # ========================
 
@@ -223,16 +239,18 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        
+
         self.hidden_state = None    
-            
+
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
+
         self.hidden_state = None   
+
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -250,7 +268,28 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        #forward
+        y_hat, self.hidden_state = self.model(x, self.hidden_state) # (B,S,V), (B,L,H)
+        y_hat = y_hat.permute(0, 2, 1) # (B,V,S)
+
+        #loss
+        loss = self.loss_fn(y_hat, y)
+
+        #backward
+        self.optimizer.zero_grad()
+        loss.backward()
+
+        #step
+        self.optimizer.step()
+
+        self.hidden_state = self.hidden_state.detach() #so the gradients wouldn't affect the next batch through the hidden state (which it takes as input)
+
+
+        #correct predictions
+        with torch.no_grad():
+            num_correct = torch.sum(torch.argmax(y_hat, dim= 1) == y)
+
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -270,7 +309,14 @@ class RNNTrainer(Trainer):
             #  - Loss calculation
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            #forward
+            y_hat, self.hidden_state = self.model(x, self.hidden_state) # do I need to save the hidden state? probably because batches are sequential
+            y_hat = y_hat.permute(0, 2, 1) # (B,V,S)
+
+            #loss
+            loss = self.loss_fn(y_hat, y)
+
+            num_correct = torch.sum(torch.argmax(y_hat, dim= 1) == y)
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
