@@ -171,7 +171,7 @@ class VAE(nn.Module):
 
             z = torch.randn(n, self.z_dim, device=device)
 
-            return self.decode(z).cpu()
+            samples = self.decode(z)
             # ========================
 
         # Detach and move to CPU for display purposes

@@ -90,7 +90,7 @@ def part2_vae_hyperparams():
     hypers["batch_size"] = 96
     hypers["h_dim"] = 512
     hypers["z_dim"] = 64
-    hypers["x_sigma2"] = 0.1
+    hypers["x_sigma2"] = 0.001
     hypers["learn_rate"] = 0.0002
     hypers["betas"] = (0.9, 0.999)
     # ========================
