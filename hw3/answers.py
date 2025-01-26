@@ -39,7 +39,8 @@ def part1_generation_params():
     temperature = 0.0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    
+    start_seq = "FINAL ACT."
+    temperature = 0.5
     # ========================
     return start_seq, temperature
 
@@ -77,7 +78,7 @@ part1_q4 = r"""
 # ==============
 # Part 2 answers
 
-PART2_CUSTOM_DATA_URL = None
+PART2_CUSTOM_DATA_URL = 'https://github.com/AviaAvraham1/TempDatasets/raw/refs/heads/main/George_W_Bush2.zip'
 
 
 def part2_vae_hyperparams():
@@ -91,33 +92,45 @@ def part2_vae_hyperparams():
     hypers["z_dim"] = 64
     hypers["x_sigma2"] = 0.1
     hypers["learn_rate"] = 0.0002
-    hypers["betas"] = (a,b)
+    hypers["betas"] = (0.9, 0.999)
     # ========================
     return hypers
 
 
 part2_q1 = r"""
 **Your answer:**
-
+ the hyperparamater $\sigma^2$ is used in the loss function to balance the reconstruction loss and the kl loss.\
+ larger $\sigma^2$ decreases the weight of the reconstruction loss, which allows for more flexibility in reconstruction as the loss tolerates larger differences between x and x_recon. can also lead to blurred meaningless reconstructions.\
+ smaller $\sigma^2$ amplifies the weight of the reconstruction loss, making the model to reconstruct x as accurately as possible. may lead to overfitting, where the model memorizes the training data rather than learning a meaningful latent representation.
 
 """
 
 part2_q2 = r"""
 **Your answer:**
+1. reconstruction loss is incurred when the reconstructed x is not similar to the original x (in our case L2 wise).\
+    KL loss is incurred when the posterior distribution $q(z|x)$ varies from the prior $p(z)$ which is assumed to be $~N(0,1)$. keeps the variance and mean of the posterior from growing too large while $-log\sigma^2$ encourges the posterior to have non-zero variance.\
+
+2. The KL divergence loss term causes the latent space distribution to be similar to $p(z) ~ N(0,1)$. it encourges the latent space distribution to be centered around $\mu = 0$ with not too large but not zero variance. \
+
+3. after we forces the latent space distribution to be a 'dense' gaussian we can easily sample from this distribution ($N(0,1)$) and get a meaningful latent representation that most likely can be decoded to what we are trying to produce.\
+the distribution is dense because the KL term encourages *all* the latent representation to seem like they were taken from $N(0,1)$.
 
 
 """
 
 part2_q3 = r"""
 **Your answer:**
-
+We want to maximize p(X) because the only thing we know about our data assumed distribution is that our data came from it, so p(X) should be large. we're maximizing this term indirectly by maximizing it's lower bound.
 
 
 """
 
 part2_q4 = r"""
 **Your answer:**
-
+we model the log var for a few possible reason:\
+- numerical stability- very small or large values become manageable when working in log space.\
+- simpler to work with KL divergence since there the variance appears in its log form.\ 
+- this way we can enforce the variance to be non-negative while still enabling our model to produce negative values.
 """
 
 # Part 3 answers

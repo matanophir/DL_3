@@ -107,6 +107,7 @@ class Trainer(abc.ABC):
             if best_acc is None or test_result.accuracy > best_acc:
                 best_acc = test_result.accuracy
                 epochs_without_improvement = 0
+                save_checkpoint = True
             else:
                 epochs_without_improvement += 1
                 if early_stopping is not None and epochs_without_improvement >= early_stopping:
@@ -328,7 +329,20 @@ class VAETrainer(Trainer):
         x = x.to(self.device)  # Image batch (N,C,H,W)
         # TODO: Train a VAE on one batch.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        #forward
+        x_recon, mu, log_sigm2 = self.model(x)
+
+        #loss
+        loss, data_loss, _ = self.loss_fn(x, x_recon, mu, log_sigm2)
+
+        #backward
+        self.optimizer.zero_grad()
+        loss.backward()
+
+        #step
+        self.optimizer.step()
+
         # ========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
@@ -340,7 +354,13 @@ class VAETrainer(Trainer):
         with torch.no_grad():
             # TODO: Evaluate a VAE on one batch.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()    
+
+            #forward
+            x_recon, mu, log_sigm2 = self.model(x)
+
+            #loss
+            loss, data_loss, _ = self.loss_fn(x, x_recon, mu, log_sigm2)
+
             # ========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
