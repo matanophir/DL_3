@@ -136,11 +136,53 @@ we model the log var for a few possible reason:\
 # Part 3 answers
 def part3_gan_hyperparams():
     hypers = dict(
-        batch_size=0, h_dim=0, z_dim=0, x_sigma2=0, learn_rate=0.0, betas=(0.0, 0.0),
+        batch_size=0, z_dim=0, learn_rate=0.0, 
+        discriminator_optimizer=dict(type='', lr=0.0),
+        generator_optimizer=dict(type='', lr=0.0, betas=(0.0, 0.0)),
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
+    hypers["batch_size"] = 32
+    hypers["z_dim"] = 128
+    hypers['data_label'] = 1
+    hypers['label_noise'] = 0.3
 
+    hypers["discriminator_optimizer"]['type'] = 'SGD' # tip 9 
+    hypers["discriminator_optimizer"]['lr'] = 0.001
+
+    hypers["generator_optimizer"]['type'] = 'Adam'
+    hypers["generator_optimizer"]['lr'] = 0.002
+    hypers["generator_optimizer"]['betas'] = (0.9, 0.999)
+
+    # hypers['batch_size'] = 32
+    # hypers['z_dim'] = 128
+    # hypers['data_label'] = 1
+    # hypers['label_noise'] = 0.3
+    # hypers['discriminator_optimizer']['type'] = 'Adam'
+    # hypers['discriminator_optimizer']['weight_decay'] = 0.02
+    # hypers['discriminator_optimizer']['betas'] = (0.5, 0.999)
+    # hypers['discriminator_optimizer']['lr'] = 0.0002
+    # hypers['generator_optimizer']['type'] = 'Adam'
+    # hypers['generator_optimizer']['lr'] = 0.0002
+    # hypers['generator_optimizer']['weight_decay'] = 0.02
+    # hypers['generator_optimizer']['betas'] = (0.5, 0.999)
+
+    # hypers = dict(
+    #     batch_size=64, z_dim=64,
+    #     data_label=1, label_noise=0.3,
+    #     discriminator_optimizer=dict(
+    #         type='Adam',
+    #         weight_decay=0.02,
+    #         betas=(0.5, 0.999),
+    #         lr=0.0002,
+    #     ),
+    #     generator_optimizer=dict(
+    #         type='Adam',
+    #         weight_decay=0.02,
+    #         betas=(0.5, 0.999),
+    #         lr=0.0002,
+    #     ),
+    # )
     # ========================
     return hypers
 
@@ -165,7 +207,7 @@ part3_q3 = r"""
 
 
 
-PART3_CUSTOM_DATA_URL = None
+PART3_CUSTOM_DATA_URL = 'https://github.com/AviaAvraham1/TempDatasets/raw/refs/heads/main/George_W_Bush2.zip'
 
 
 def part4_transformer_encoder_hyperparams():

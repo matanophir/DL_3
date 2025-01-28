@@ -20,7 +20,33 @@ class Discriminator(nn.Module):
         #  You can then use either an affine layer or another conv layer to
         #  flatten the features.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        in_channels = in_size[0]
+        
+        self.cnn = nn.Sequential(
+            nn.Conv2d(in_channels, 128, 4, 2, 1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2),
+            
+            nn.Conv2d(128, 256, 4, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2),
+            
+            nn.Conv2d(256, 512, 4, 2, 1),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(512, 1024, 4, 2, 1),
+            nn.BatchNorm2d(1024),
+            nn.LeakyReLU(0.2),
+        )
+
+        self.model = nn.Sequential(
+            self.cnn,
+            nn.Flatten(), # by default leaves the batch dim,
+            nn.Linear(self._calc_num_cnn_features(in_size), 1024),
+            nn.LeakyReLU(0.2),
+            nn.Linear(1024, 1)
+        )
         # ========================
 
     def _calc_num_cnn_features(self, in_shape):
@@ -39,7 +65,7 @@ class Discriminator(nn.Module):
         #  No need to apply sigmoid to obtain probability - we'll combine it
         #  with the loss due to improved numerical stability.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y = self.model(x)
         # ========================
         return y
 
@@ -61,7 +87,36 @@ class Generator(nn.Module):
         #  section or implement something new.
         #  You can assume a fixed image size.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        self.cnn = nn.Sequential(
+            nn.ConvTranspose2d(1024, 512, 4, 2, 1),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2),
+            
+            nn.ConvTranspose2d(512, 256, 4, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2),
+            
+            nn.ConvTranspose2d(256, 128, 4, 2, 1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2),
+            
+            nn.ConvTranspose2d(128, out_channels, 4, 2, 1),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.2),
+        )
+
+        self.model = nn.Sequential(
+            nn.Linear(z_dim, 1024),
+            nn.LeakyReLU(0.2),
+            nn.Linear(1024, 1024 * featuremap_size * featuremap_size),
+            nn.LeakyReLU(0.2),
+            nn.Unflatten(1, (1024, featuremap_size, featuremap_size)),
+            self.cnn,
+            nn.Tanh()
+        )
+
+
         # ========================
 
     def sample(self, n, with_grad=False):
@@ -78,7 +133,9 @@ class Generator(nn.Module):
         #  Generate n latent space samples and return their reconstructions.
         #  Don't use a loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        with torch.set_grad_enabled(with_grad):
+            samples = self.forward(torch.randn(n, self.z_dim, device= device))
+
         # ========================
         return samples
 
@@ -92,7 +149,7 @@ class Generator(nn.Module):
         #  Don't forget to make sure the output instances have the same
         #  dynamic range as the original (real) images.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        x = self.model(z)
         # ========================
         return x
 
@@ -118,7 +175,20 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     #  generated labels.
     #  See pytorch's BCEWithLogitsLoss for a numerically stable implementation.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    generated_label = 1 - data_label
+    loss_fn = F.binary_cross_entropy_with_logits
+    real_y_label = torch.zeros_like(y_data) + data_label
+    generated_y_label = torch.zeros_like(y_generated) + generated_label
+
+    # noising
+    real_y_label +=  label_noise * torch.rand_like(y_data) - label_noise/2 #negate?
+    generated_y_label +=  label_noise * torch.rand_like(y_data) - label_noise/2
+
+    
+    # losses
+    loss_data = loss_fn(y_data, real_y_label)
+    loss_generated = loss_fn(y_generated, generated_y_label)
+
     # ========================
     return loss_data + loss_generated
 
@@ -139,7 +209,10 @@ def generator_loss_fn(y_generated, data_label=0):
     #  Think about what you need to compare the input to, in order to
     #  formulate the loss in terms of Binary Cross Entropy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    loss_fn = F.binary_cross_entropy_with_logits
+    generated_y_label = torch.zeros_like(y_generated) + data_label # cause we need to compare to the flipped
+
+    loss = loss_fn(y_generated, generated_y_label)
     # ========================
     return loss
 
@@ -164,7 +237,28 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+
+    # data
+    real_data = x_data
+    batch_size = real_data.shape[0]
+
+    fake_images = gen_model.sample(batch_size, with_grad= True) 
+
+    dsc_optimizer.zero_grad()
+
+    # forward
+    dsc_pred_real = dsc_model(real_data)
+    dsc_pred_fake = dsc_model(fake_images.detach())
+
+    # loss
+    dsc_loss = dsc_loss_fn(dsc_pred_real, dsc_pred_fake)
+
+    # backward
+    dsc_loss.backward()
+
+    # step
+    dsc_optimizer.step()
+
     # ========================
 
     # TODO: Generator update
@@ -172,7 +266,15 @@ def train_batch(
     #  2. Calculate generator loss
     #  3. Update generator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    gen_optimizer.zero_grad()
+
+    dsc_pred_fake = dsc_model(fake_images)
+
+    gen_loss = gen_loss_fn(dsc_pred_fake)
+
+    gen_loss.backward()
+
+    gen_optimizer.step()
     # ========================
 
     return dsc_loss.item(), gen_loss.item()
@@ -195,9 +297,10 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     #  You should decide what logic to use for deciding when to save.
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    if len(gen_losses) % 10 ==0:
+        torch.save(gen_model, checkpoint_file)
+        print(f"*** Saved checkpoint {checkpoint_file} ")
+        saved = True
+        
     # ========================
-    torch.save(gen_model, checkpoint_file)
-    print(f"*** Saved checkpoint {checkpoint_file} ")
-    saved = True
     return saved
