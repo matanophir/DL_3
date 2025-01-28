@@ -143,12 +143,12 @@ def part3_gan_hyperparams():
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
     hypers["batch_size"] = 32
-    hypers["z_dim"] = 128
+    hypers["z_dim"] = 256
     hypers['data_label'] = 1
     hypers['label_noise'] = 0.3
 
     hypers["discriminator_optimizer"]['type'] = 'SGD' # tip 9 
-    hypers["discriminator_optimizer"]['lr'] = 0.001
+    hypers["discriminator_optimizer"]['lr'] = 0.0005
 
     hypers["generator_optimizer"]['type'] = 'Adam'
     hypers["generator_optimizer"]['lr'] = 0.002
