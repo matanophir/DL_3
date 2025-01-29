@@ -188,19 +188,39 @@ def part3_gan_hyperparams():
 
 part3_q1 = r"""
 **Your answer:**
+When training a GAN we actually train two models , the generator and the discriminator. The generator is trained to generate data that is similar to the real data, while the discriminator is trained to distinguish between real and fake data.\
+We want the training of these two models to be separated, so we won't encounter any unintended behavior related to the computational graph and the flow of gradients like unnecessary gradient tracking or even updates if not handled correctly.\
 
+when training the discriminator we dont want the backpropagation to calculate the generator's gradients (nor ofc update it's weights), so we detach the generator's output from the computational graph effectively 'cutting' the connection between the generator and the discriminator.\
+when training the generator we need the flow of gradient to pass through the discriminator and the generated data to update the generator's weights, so we don't detach the generator's output from the computational graph.\
+
+ofc when sampling from the generator at inference time we dont need the computational overhead of the graph so we disable the tracking to begin with.\
 
 """
 
 part3_q2 = r"""
 **Your answer:**
+1. We should not decide to stop training based solely on the generator loss because it it not a good indicator of it's performance.\
+the generator and discriminator are battling each other during training time, so the generator loss may be low at one point because the discriminator is weak, but the generator isn't actually generating good data.\
+we should stop the training based on the given results.\
 
+2. if we look at the discriminator loss formula:
+$$
+- \mathbb{E} _{\bb{x} \sim p(\bb{X}) } \log \Delta _{\bb{\delta}}(\bb{x})  \, - \,
+\mathbb{E} _{\bb{z} \sim p(\bb{Z}) } \log (1-\Delta _{\bb{\delta}}(\Psi _{\bb{\gamma}} (\bb{z}) )).
+$$
+
+the first term is the loss of the discriminator on real data, and the second is the loss on generated data which relates to the generator loss.\
+if the discriminator loss is constant and the generator loss decreases it means that the discriminator loss on the on the generated data is increasing, hence the real data loss is decreasing.\ 
+this means that the generator is improving and surpassing the detecting capabilities of the discriminator, and the discriminator is also getting better at discerning real data. 
 
 """
 
 part3_q3 = r"""
 **Your answer:**
-
+We think the main difference is that the gan outputs fuzzier images with more disruptions.
+the thing that may cause it is the formulation of the loss functions. in the VAE we have reconstruction loss that makes the generated images to be similar to the real images, so any noise in the generated images will be penalized.
+in the GAN we don't have this term, so the generator can generate images with more noise and disruptions so long as the discriminator doesn't deem them as fake. for example the generator can generate a face that suffices the discriminator and have more 'creativity' room in generating the background
 
 
 """
